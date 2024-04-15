@@ -80,14 +80,25 @@ void handle_client(int client_socket)
     // 构建响应头部
     char response[BUFFER_SIZE];
     int offset = snprintf(response, sizeof(response), "HTTP/1.1 200 OK\r\n");
-    offset += snprintf(response + offset, sizeof(response) - offset, "Content-Type: text/csv\r\n");
-    offset += snprintf(response + offset, sizeof(response) - offset, "Content-Length: %lu\r\n\r\n", icmp_num * sizeof(struct ping_result));
+    offset += snprintf(response + offset, sizeof(response) - offset, "Content-Type: text/plain\r\n");
+
     // 构建响应正文
+    char response_body[BUFFER_SIZE - offset]; // 剩余空间用于响应正文
+    int response_body_offset = 0;
     for (int i = 0; i < icmp_num; i++)
     {
-        offset += snprintf(response + offset, sizeof(response) - offset, "%s,%s,%d,%.2f\n", results[i].ipv4, results[i].ipv6, results[i].seq, results[i].time);
+        response_body_offset += snprintf(response_body + response_body_offset, sizeof(response_body) - response_body_offset, "ipv4:%s,ipv6:%s,seq:%d,time:%.2f\n", results[i].ipv4, results[i].ipv6, results[i].seq, results[i].time);
     }
+
+    // 构建 Content-Length 头部
+    int content_length = response_body_offset;
+    offset += snprintf(response + offset, sizeof(response) - offset, "Content-Length: %d\r\n\r\n", content_length);
+
+    // 将响应头部和响应正文拼接在一起
+    memcpy(response + offset, response_body, response_body_offset);
+    offset += response_body_offset;
+
     // 发送响应给客户端
-    send(client_socket, response, strlen(response), 0);
+    send(client_socket, response, offset, 0);
     close(client_socket);
 }
