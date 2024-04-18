@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <sys/socket.h>
+#include <ifaddrs.h>
 
 #define ICMP_ECHO 8      /* Echo Request			*/
 #define ICMP_ECHOREPLY 0 /* Echo Reply			*/
@@ -54,10 +55,11 @@ struct __attribute__((__packed__)) icmp_echo
  */
 struct ping_result
 {
-    char ipv4[IPV4_LEN]; // 目标主机ip IPv4
-    char ipv6[IPV6_LEN]; // 目标主机ip IPv6
-    uint16_t seq;        // 发送的包的序列号
-    double time;         // ms
+    char ipv4_source[IPV4_LEN]; // 当前主机ip IPv4
+    char ipv4_target[IPV4_LEN]; // 目标主机ip IPv4
+    char ipv6_target[IPV6_LEN]; // 目标主机ip IPv6
+    uint16_t seq;               // 发送的包的序列号
+    double time;                // ms
 };
 
 /**
@@ -73,6 +75,12 @@ double get_timestamp();
  * @return 计算得到的校验和
  */
 uint16_t calculate_checksum(unsigned char *buffer, int bytes);
+
+/**
+ * @brief 获取当前IP地址
+ * @return 当前IP地址
+ */
+char *get_cur_ip();
 
 /**
  * @brief 发送 ICMP Echo 请求

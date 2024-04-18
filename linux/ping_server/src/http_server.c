@@ -87,7 +87,7 @@ void handle_client(int client_socket)
     int response_body_offset = 0;
     for (int i = 0; i < icmp_num; i++)
     {
-        response_body_offset += snprintf(response_body + response_body_offset, sizeof(response_body) - response_body_offset, "ipv4:%s,ipv6:%s,seq:%d,time:%.2f\n", results[i].ipv4, results[i].ipv6, results[i].seq, results[i].time);
+        response_body_offset += snprintf(response_body + response_body_offset, sizeof(response_body) - response_body_offset, "ipv4_source:%s,ipv4_target:%s,ipv6_target:%s,seq:%d,time:%.2fms\n", results[i].ipv4_source, results[i].ipv4_target, results[i].ipv6_target, results[i].seq, results[i].time);
     }
 
     // 构建 Content-Length 头部

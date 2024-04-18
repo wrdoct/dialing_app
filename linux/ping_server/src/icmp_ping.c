@@ -34,6 +34,43 @@ uint16_t calculate_checksum(unsigned char *buffer, int bytes)
     return checksum & 0xffff;
 }
 
+char *get_cur_ip()
+{
+    struct ifaddrs *ifaddr, *ifa;
+    if (getifaddrs(&ifaddr) == -1)
+    {
+        perror("Failed to get interface addresses");
+        return NULL;
+    }
+
+    char *ip = NULL;
+
+    // 遍历接口地址列表
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+    {
+        if (ifa->ifa_addr == NULL)
+        {
+            continue;
+        }
+
+        // 只处理IPv4地址
+        if (ifa->ifa_addr->sa_family == AF_INET)
+        {
+            struct sockaddr_in *addr = (struct sockaddr_in *)ifa->ifa_addr;
+
+            // 排除回环接口
+            if (strcmp(ifa->ifa_name, "lo") != 0)
+            {
+                ip = inet_ntoa(addr->sin_addr);
+                break;
+            }
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    return ip;
+}
+
 int send_echo_request(int sock, struct sockaddr_in *addr, int ident, int seq)
 {
     struct icmp_echo icmp;
@@ -65,7 +102,7 @@ int send_echo_request(int sock, struct sockaddr_in *addr, int ident, int seq)
 
 struct ping_result recv_echo_reply(int sock, int ident)
 {
-    struct ping_result default_result = {"", "", 0, 0.00};
+    struct ping_result default_result = {"", "", "", 0, 0.00};
     // 定义缓冲区
     unsigned char buffer[IP_BUFFER_SIZE];
     struct sockaddr_in peer_addr;
@@ -113,7 +150,8 @@ struct ping_result recv_echo_reply(int sock, int ident)
 
     struct ping_result ping_result;
     bzero(&ping_result, sizeof(ping_result));
-    strcpy(ping_result.ipv4, inet_ntoa(peer_addr.sin_addr));
+    strcpy(ping_result.ipv4_source, get_cur_ip());
+    strcpy(ping_result.ipv4_target, inet_ntoa(peer_addr.sin_addr));
     ping_result.seq = ntohs(icmp->seq);
     ping_result.time = time_ms;
 
